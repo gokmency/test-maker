@@ -1,148 +1,150 @@
-# Test Maker - PDF'den Soru Seçimi ve Test Oluşturma Aracı
+# 🎓 Test Maker MVP
 
-Öğretmenlerin PDF dosyalarından soruları seçerek profesyonel test kitapçıkları oluşturabileceği modern web uygulaması.
+**PDF'den profesyonel test kitapçıkları oluşturan web tabanlı araç**
 
-## 🚀 Özellikler
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?style=for-the-badge&logo=github)](https://github.com/gokmency/testmaker)
+[![React](https://img.shields.io/badge/React-18.2.0-blue?style=for-the-badge&logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.3-blue?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 
-### ✅ Tamamlanan Özellikler
-- **PDF Yükleme ve Görüntüleme**: PDF dosyalarını yükleyip sayfa sayfa görüntüleme
-- **Soru Seçimi**: PDF üzerinde fare ile kare çizerek soruları seçme
-- **Drag & Drop**: Seçilen soruları sürükle-bırak ile yeniden sıralama
-- **Profesyonel PDF Export**: Seçilen sorulardan test kitapçığı oluşturma
-- **Responsive Tasarım**: Tüm cihazlarda uyumlu arayüz
-- **Test Şablonları**: Özelleştirilebilir test başlığı, okul, öğretmen bilgileri
+## ✨ Özellikler
 
-### 🔧 Teknik Özellikler
-- **React 18 + TypeScript**: Modern ve tip güvenli geliştirme
-- **Vite**: Hızlı development ve build
-- **Shadcn/UI**: Modern ve erişilebilir UI bileşenleri
-- **React PDF**: PDF görüntüleme ve işleme
-- **Fabric.js**: Canvas üzerinde interaktif soru seçimi
-- **jsPDF**: Profesyonel PDF oluşturma
-- **DND Kit**: Drag & drop sıralama
-- **Tailwind CSS**: Responsive ve modern tasarım
+### 🚀 **Ana Özellikler**
+- **Multi-PDF Desteği** - Birden fazla PDF'den soru seçimi
+- **Akıllı Soru Seçimi** - Fare ile kare çizerek soru crop etme
+- **Profesyonel PDF Export** - A4 formatında test kitapçığı
+- **Önizleme Sistemi** - İndirmeden önce PDF kontrolü
+- **Türkçe Karakter Desteği** - Tam Türkçe dil desteği
 
-## 🛠 Kurulum
+### 🎯 **Soru Yönetimi**
+- **Drag & Drop** - Soruları yeniden sıralama
+- **Çoklu Seçim** - Birden fazla soru seçimi
+- **Onay Sistemi** - Seçilen soruları onaylama/iptal etme
+- **PDF Bilgisi** - Her sorunun hangi PDF'den geldiği
 
+### 📋 **Test Şablonu**
+- **Okul Bilgileri** - Okul adı, sınıf, öğretmen
+- **Sınav Detayları** - Başlık, tarih, süre, puan
+- **Numaralandırma** - Sayısal (1,2,3...) veya alfabetik (a,b,c...)
+- **Özelleştirilebilir** - Tüm alanlar düzenlenebilir
+
+## 🛠️ Teknoloji Stack
+
+- **Frontend**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS + Shadcn/ui
+- **PDF Rendering**: React-PDF (PDF.js)
+- **PDF Generation**: jsPDF
+- **Drag & Drop**: @dnd-kit
+- **State Management**: React Hooks
+- **Package Manager**: Yarn
+
+## 🚀 Kurulum
+
+### Gereksinimler
+- Node.js 18+ 
+- Yarn (önerilen) veya npm
+
+### Adımlar
 ```bash
-# Projeyi klonla
-git clone [repo-url]
-cd question-extractor
+# Repository'yi klonla
+git clone https://github.com/gokmency/testmaker.git
+cd testmaker
 
 # Bağımlılıkları yükle
-npm install
+yarn install
 
-# Development server'ı başlat
-npm run dev
+# Geliştirme sunucusunu başlat
+yarn dev
+
+# Tarayıcıda aç
+open http://localhost:8080
 ```
 
-## 📖 Kullanım
+## 📱 Kullanım
 
-### 1. PDF Yükleme
-- Ana sayfada "Dosya Seç" butonuna tıklayın
-- Veya PDF dosyasını sürükleyip bırakın
-- Desteklenen format: PDF (Maksimum 50MB)
+### 1. **PDF Yükleme**
+- Sol panelden PDF dosyalarını sürükle & bırak
+- Veya "Dosya Seç" butonuna tıkla
+- Birden fazla PDF ekleyebilirsin
 
-### 2. Soru Seçimi
-- PDF yüklendikten sonra "Soru Seç" butonuna tıklayın
-- PDF üzerinde fare ile kare çizerek soruları seçin
-- Seçilen sorular sağ panelde görüntülenir
+### 2. **Soru Seçimi**
+- PDF'i seç ve "Soru Seç" moduna geç
+- Fare ile kare çizerek soruları seç
+- Onay/iptal butonlarıyla soruları yönet
 
-### 3. Soru Düzenleme
-- Sağ panelde soruları sürükle-bırak ile yeniden sıralayın
-- İstenmeyen soruları çöp kutusu simgesi ile silin
+### 3. **Test Oluşturma**
+- Sağ panelde test bilgilerini doldur
+- "Önizle" ile PDF'i kontrol et
+- "İndir" ile test kitapçığını al
 
-### 4. Test Oluşturma
-- Test ayarları bölümünde:
-  - Test başlığını girin
-  - Okul/kurum adını yazın
-  - Sınıf/şube bilgisini ekleyin
-  - Öğretmen adını girin
-  - Süreyi belirleyin
-- "PDF Test Kitapçığı Oluştur" butonuna tıklayın
+## 🎨 Ekran Görüntüleri
 
-## 🎯 MVP Kapsamı
+```
+┌─────────────┬─────────────────┬─────────────┐
+│ PDF Dosyaları │    PDF Viewer   │   Sorular   │
+│             │                 │             │
+│ • Matematik │ [PDF CONTENT]   │ 1. [IMG]    │
+│ • Fizik     │                 │ 2. [IMG]    │
+│ • Kimya     │ [Soru Seçimi]   │ 3. [IMG]    │
+│             │                 │             │
+│ [+ PDF Ekle]│                 │ [Önizle]    │
+│             │                 │ [İndir]     │
+└─────────────┴─────────────────┴─────────────┘
+```
 
-### Dahil Edilenler ✅
-- [x] PDF yükleme ve görüntüleme
-- [x] Basit kare çizme ile soru seçimi  
-- [x] Seçilen soruları listeleme
-- [x] Drag & drop ile sıralama
-- [x] Temel test şablonu
-- [x] PDF export
-- [x] Responsive tasarım
+## 🔧 Geliştirme
 
-### Gelecek Versiyonlar 🔄
-- [ ] Çoklu PDF desteği
-- [ ] Gelişmiş soru editörü
-- [ ] Soru kategorileri
-- [ ] Template kaydetme
-- [ ] Kullanıcı hesapları
-
-## 🏗 Proje Yapısı
-
+### Proje Yapısı
 ```
 src/
-├── components/          # React bileşenleri
-│   ├── PDFUploader.tsx  # PDF yükleme
-│   ├── PDFViewer.tsx    # PDF görüntüleme ve soru seçimi
-│   ├── QuestionPanel.tsx # Soru listesi ve test ayarları
-│   └── ui/              # Shadcn UI bileşenleri
-├── hooks/               # Custom hook'lar
-│   └── usePDFExport.ts  # PDF export işlemleri
-├── types/               # TypeScript tip tanımları
-│   └── test.ts          # Test ve soru tipleri
-└── pages/               # Sayfa bileşenleri
-    └── TestMaker.tsx    # Ana uygulama sayfası
+├── components/          # UI Components
+│   ├── PDFSelector.tsx # PDF yönetimi
+│   ├── PDFViewer.tsx   # PDF görüntüleme
+│   ├── QuestionPanel.tsx # Soru yönetimi
+│   └── ui/             # Shadcn/ui components
+├── hooks/               # Custom hooks
+│   └── usePDFExport.ts # PDF export logic
+├── pages/               # Sayfa components
+│   └── TestMaker.tsx   # Ana uygulama
+├── types/               # TypeScript types
+│   └── test.ts         # Interface definitions
+└── styles/              # CSS styles
 ```
 
-## 🎨 Tasarım Sistemi
-
-### Renk Paleti
-- **Primary**: #4F46E5 (Indigo)
-- **Secondary**: #059669 (Emerald) 
-- **Accent**: #DC2626 (Red)
-- **Background**: #F9FAFB (Gray-50)
-- **Text**: #111827 (Gray-900)
-
-## 📱 Responsive Breakpoints
-- **Mobile**: < 768px
-- **Tablet**: 768px - 1279px  
-- **Desktop**: ≥ 1280px
-
-## 🚀 Build ve Deploy
-
+### Scripts
 ```bash
-# Production build
-npm run build
-
-# Build'i önizle
-npm run preview
+yarn dev          # Geliştirme sunucusu
+yarn build        # Production build
+yarn preview      # Build önizleme
+yarn lint         # Linting kontrolü
 ```
+
+## 🎯 Gelecek Özellikler
+
+- [ ] **Soru Kategorileri** - Matematik, Fizik, Tarih vb.
+- [ ] **Zorluk Seviyeleri** - Kolay, Orta, Zor
+- [ ] **Soru Bankası** - Soruları kaydetme ve yönetme
+- [ ] **Test Şablonları** - Hazır formatlar
+- [ ] **İstatistikler** - Kullanım analizi
+- [ ] **Paylaşım** - Test şablonlarını paylaşma
 
 ## 🤝 Katkıda Bulunma
 
-1. Fork yapın
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit yapın (`git commit -m 'Add amazing feature'`)
-4. Push yapın (`git push origin feature/amazing-feature`)
-5. Pull Request oluşturun
+1. Fork yap
+2. Feature branch oluştur (`git checkout -b feature/amazing-feature`)
+3. Commit yap (`git commit -m 'Add amazing feature'`)
+4. Push yap (`git push origin feature/amazing-feature`)
+5. Pull Request aç
 
-## 📝 Lisans
+## 📄 Lisans
 
-Bu proje MIT lisansı altında lisanslanmıştır.
+Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+
+## 👨‍💻 Geliştirici
+
+**Gökmen** - [GitHub](https://github.com/gokmency)
 
 ---
 
-**Test Maker** - Eğitimde teknoloji kullanımını kolaylaştıran modern araç 🎓
-
-## Original Lovable Project Info
-
-**URL**: https://lovable.dev/projects/bbd491d7-6d06-4bce-b66a-62442b82dd62
-
-This project is built with:
-- Vite
-- TypeScript  
-- React
-- shadcn-ui
-- Tailwind CSS
+⭐ Bu projeyi beğendiysen yıldız vermeyi unutma!
