@@ -7,8 +7,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Question } from '@/types/test';
 import { toast } from 'sonner';
 
-// PDF.js worker setup
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// PDF.js worker setup - use local worker to avoid CORS issues
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface PDFViewerProps {
   file: File;
