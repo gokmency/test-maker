@@ -1,2 +1,32 @@
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+/* React PDF Styles */
+@import 'react-pdf/dist/Page/AnnotationLayer.css';
+@import 'react-pdf/dist/Page/TextLayer.css';
+
+/* Custom Selection Styles */
+#selection-overlay {
+  cursor: crosshair !important;
+  pointer-events: none;
+}
+
+#selection-overlay.active {
+  pointer-events: auto;
+}
+
+.pdf-container {
+  position: relative;
+  display: inline-block;
+}
+
+.pdf-container canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Selection feedback */
+.selection-mode {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}

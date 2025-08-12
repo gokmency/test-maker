@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Square } from 'lucide-react';
-import { Canvas as FabricCanvas, Rect } from 'fabric';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Square, X, Check } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Question } from '@/types/test';
 import { toast } from 'sonner';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import '@/styles/react-pdf.css';
 
 // Set worker path for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 interface PDFViewerProps {
   file: File;
@@ -18,14 +19,25 @@ interface PDFViewerProps {
 }
 
 export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
-  const pageRef = useRef<HTMLDivElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(1.2);
   const [isSelecting, setIsSelecting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [canvasReady, setCanvasReady] = useState(false);
+  
+  // Selection state
+  const [selectionStart, setSelectionStart] = useState<{x: number, y: number} | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{x: number, y: number} | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [pendingSelections, setPendingSelections] = useState<Array<{
+    id: string,
+    bounds: {x: number, y: number, width: number, height: number},
+    imageData: string
+  }>>([]);
 
   // Create file URL for PDF
   useEffect(() => {
@@ -36,10 +48,35 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
     };
   }, [file]);
 
+  // Redraw canvas when pending selections change
+  useEffect(() => {
+    if (!isSelecting && pendingSelections.length > 0) {
+      redrawCanvas();
+    }
+  }, [pendingSelections, isSelecting]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (pendingSelections.length === 0) return;
+      
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        confirmAllSelections();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelAllSelections();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [pendingSelections]);
+
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     setIsLoading(false);
-    toast.success(`PDF yüklendi: ${numPages} sayfa`);
+    toast.success(`PDF başarıyla yüklendi: ${numPages} sayfa`);
   };
 
   const onDocumentLoadError = (error: any) => {
@@ -48,136 +85,310 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
     setIsLoading(false);
   };
 
-  const onPageLoadSuccess = (page: any) => {
-    // Setup Fabric.js canvas for selection after page loads
-    if (!pageRef.current) return;
-
-    // Find the canvas element created by react-pdf
-    const canvas = pageRef.current.querySelector('canvas');
-    if (!canvas) return;
-
-    // Dispose previous fabric canvas
-    if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.dispose();
-    }
-
-    // Create new fabric canvas overlay
-    const fabricCanvas = new FabricCanvas(canvas, {
-      selection: false,
-      preserveObjectStacking: true,
-    });
-
-    fabricCanvas.setDimensions({
-      width: canvas.width,
-      height: canvas.height
-    });
-
-    fabricCanvasRef.current = fabricCanvas;
-  };
-
-  // Selection logic
-  const startSelection = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    setIsSelecting(true);
-    const canvas = fabricCanvasRef.current;
-    
-    let isDown = false;
-    let origX = 0;
-    let origY = 0;
-    let rect: Rect | null = null;
-
-    const handleMouseDown = (options: any) => {
-      if (!isSelecting) return;
+  // Setup canvas dimensions after page loads
+  const onPageLoadSuccess = useCallback(() => {
+    setTimeout(() => {
+      if (!containerRef.current) {
+        console.log('Container ref not found');
+        return;
+      }
       
-      isDown = true;
-      const pointer = canvas.getPointer(options.e);
-      origX = pointer.x;
-      origY = pointer.y;
-      
-      rect = new Rect({
-        left: origX,
-        top: origY,
-        width: 0,
-        height: 0,
-        fill: 'rgba(66, 120, 255, 0.2)',
-        stroke: '#4278ff',
-        strokeWidth: 2,
-        selectable: false,
-        evented: false,
-      });
-      
-      canvas.add(rect);
-    };
-
-    const handleMouseMove = (options: any) => {
-      if (!isDown || !rect) return;
-      
-      const pointer = canvas.getPointer(options.e);
-      const width = Math.abs(pointer.x - origX);
-      const height = Math.abs(pointer.y - origY);
-      const left = Math.min(pointer.x, origX);
-      const top = Math.min(pointer.y, origY);
-      
-      rect.set({ left, top, width, height });
-      canvas.renderAll();
-    };
-
-    const handleMouseUp = () => {
-      if (!isDown || !rect) return;
-      
-      isDown = false;
-      
-      const selection = {
-        x: rect.left || 0,
-        y: rect.top || 0,
-        width: rect.width || 0,
-        height: rect.height || 0,
-      };
-
-      if (selection.width > 20 && selection.height > 20) {
-        // Capture the selected area as image from react-pdf canvas
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        const sourceCanvas = pageRef.current?.querySelector('canvas');
-        
-        if (tempCtx && sourceCanvas) {
-          tempCanvas.width = selection.width;
-          tempCanvas.height = selection.height;
-          
-          tempCtx.drawImage(
-            sourceCanvas,
-            selection.x, selection.y, selection.width, selection.height,
-            0, 0, selection.width, selection.height
-          );
-          
-          const imageData = tempCanvas.toDataURL('image/png');
-          
-          onQuestionSelect({
-            imageData,
-            pageNumber: currentPage,
-            selection,
-          });
-          
-          toast.success('Soru başarıyla seçildi!');
-        }
+      const pdfCanvas = containerRef.current.querySelector('canvas');
+      if (!pdfCanvas) {
+        console.log('PDF canvas not found');
+        return;
       }
 
-      canvas.remove(rect);
-      canvas.renderAll();
-      setIsSelecting(false);
-    };
+      console.log('PDF canvas found, canvas will be ready for selection');
+      setCanvasReady(true);
+      
+      // Canvas dimensions will be set when selection starts
+      console.log('PDF canvas dimensions:', {
+        pdfWidth: pdfCanvas.width,
+        pdfHeight: pdfCanvas.height,
+        offsetWidth: pdfCanvas.offsetWidth,
+        offsetHeight: pdfCanvas.offsetHeight
+      });
+    }, 300);
+  }, []);
 
-    canvas.on('mouse:down', handleMouseDown);
-    canvas.on('mouse:move', handleMouseMove);
-    canvas.on('mouse:up', handleMouseUp);
+  // Selection handlers
+  const startSelection = () => {
+    console.log('Start selection clicked', { canvasReady, canvasRef: !!canvasRef.current });
+    
+    if (!canvasReady) {
+      console.log('Canvas not ready yet');
+      toast.error('PDF henüz yükleniyor. Lütfen bekleyin.');
+      return;
+    }
+    
+    if (!canvasRef.current) {
+      console.log('Canvas ref is null');
+      toast.error('Canvas bulunamadı. Sayfayı yenileyin.');
+      return;
+    }
+    
+    if (!containerRef.current) {
+      console.log('Container ref is null');
+      toast.error('PDF container bulunamadı.');
+      return;
+    }
+    
+    // Get PDF canvas dimensions and set overlay canvas dimensions
+    const pdfCanvas = containerRef.current.querySelector('canvas');
+    if (!pdfCanvas) {
+      console.log('PDF canvas not found');
+      toast.error('PDF canvas bulunamadı.');
+      return;
+    }
+    
+    const canvas = canvasRef.current;
+    canvas.width = pdfCanvas.width;
+    canvas.height = pdfCanvas.height;
+    
+    console.log('Canvas dimensions set:', {
+      pdfWidth: pdfCanvas.width,
+      pdfHeight: pdfCanvas.height,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height
+    });
+    
+    console.log('Starting selection mode');
+    
+    setIsSelecting(true);
+    setSelectionStart(null);
+    setSelectionEnd(null);
+    // Don't clear pending selections - allow multiple
+    
+    // Clear previous selection
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    toast.success('Seçim modu aktif. PDF üzerinde kare çizin.');
+  };
 
-    return () => {
-      canvas.off('mouse:down', handleMouseDown);
-      canvas.off('mouse:move', handleMouseMove);
-      canvas.off('mouse:up', handleMouseUp);
-    };
-  }, [isSelecting, currentPage, onQuestionSelect]);
+  const stopSelection = () => {
+    if (!canvasRef.current) return;
+    
+    setIsSelecting(false);
+    setIsDrawing(false);
+    setSelectionStart(null);
+    setSelectionEnd(null);
+    // Keep pending selections
+    
+    const canvas = canvasRef.current;
+    canvas.style.pointerEvents = 'none';
+    canvas.style.cursor = 'default';
+    
+    // Clear selection
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    console.log('Mouse down event', { isSelecting, canvas: !!canvasRef.current });
+    
+    if (!isSelecting || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Simple coordinate calculation
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Scale to canvas resolution
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+    
+    console.log('Mouse down coordinates:', { 
+      clientX: e.clientX, 
+      clientY: e.clientY,
+      rectLeft: rect.left,
+      rectTop: rect.top,
+      x, y, 
+      canvasX, 
+      canvasY,
+      scaleX,
+      scaleY
+    });
+    
+    setSelectionStart({ x: canvasX, y: canvasY });
+    setSelectionEnd({ x: canvasX, y: canvasY });
+    setIsDrawing(true);
+    
+    // Clear canvas and draw starting point
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'red';
+      ctx.fillRect(canvasX - 2, canvasY - 2, 4, 4);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !isSelecting || !canvasRef.current || !selectionStart) return;
+    
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Calculate current mouse position
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+    
+    setSelectionEnd({ x: canvasX, y: canvasY });
+    
+    // Draw selection rectangle
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw current selection rectangle
+      const width = canvasX - selectionStart.x;
+      const height = canvasY - selectionStart.y;
+      
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+      
+      ctx.fillRect(selectionStart.x, selectionStart.y, width, height);
+      ctx.strokeRect(selectionStart.x, selectionStart.y, width, height);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!isDrawing || !selectionStart || !selectionEnd || !containerRef.current) return;
+    
+    setIsDrawing(false);
+    
+    const width = Math.abs(selectionEnd.x - selectionStart.x);
+    const height = Math.abs(selectionEnd.y - selectionStart.y);
+    
+    if (width < 10 || height < 10) {
+      toast.error('Lütfen daha büyük bir alan seçin');
+      stopSelection();
+      return;
+    }
+    
+    // Get PDF canvas for image capture
+    const pdfCanvas = containerRef.current.querySelector('canvas');
+    if (!pdfCanvas) return;
+    
+    // Calculate selection bounds
+    const left = Math.min(selectionStart.x, selectionEnd.x);
+    const top = Math.min(selectionStart.y, selectionEnd.y);
+    
+    // Create temporary canvas for cropping
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    if (tempCtx) {
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+      
+      // Draw the selected area from PDF canvas
+      tempCtx.drawImage(
+        pdfCanvas,
+        left, top, width, height,
+        0, 0, width, height
+      );
+      
+      const imageData = tempCanvas.toDataURL('image/png', 0.9);
+      
+      // Add to pending selections
+      const newSelection = {
+        id: `selection_${Date.now()}_${Math.random()}`,
+        bounds: { x: left, y: top, width, height },
+        imageData
+      };
+      
+      setPendingSelections(prev => [...prev, newSelection]);
+      
+      toast.success(`Soru seçildi! Toplam ${pendingSelections.length + 1} soru bekliyor.`);
+    }
+  };
+
+  // Confirm/Cancel selections
+  const confirmAllSelections = () => {
+    if (pendingSelections.length === 0) return;
+    
+    pendingSelections.forEach(selection => {
+      onQuestionSelect({
+        imageData: selection.imageData,
+        pageNumber: currentPage,
+        selection: selection.bounds
+      });
+    });
+    
+    toast.success(`${pendingSelections.length} soru başarıyla eklendi!`);
+    setPendingSelections([]);
+    redrawCanvas();
+  };
+
+  const confirmSingleSelection = (selectionId: string) => {
+    const selection = pendingSelections.find(s => s.id === selectionId);
+    if (!selection) return;
+    
+    onQuestionSelect({
+      imageData: selection.imageData,
+      pageNumber: currentPage,
+      selection: selection.bounds
+    });
+    
+    setPendingSelections(prev => prev.filter(s => s.id !== selectionId));
+    toast.success('Soru eklendi!');
+    redrawCanvas();
+  };
+
+  const cancelSingleSelection = (selectionId: string) => {
+    setPendingSelections(prev => prev.filter(s => s.id !== selectionId));
+    toast.info('Seçim iptal edildi');
+    redrawCanvas();
+  };
+
+  const cancelAllSelections = () => {
+    setPendingSelections([]);
+    toast.info('Tüm seçimler iptal edildi');
+    redrawCanvas();
+  };
+
+  // Redraw canvas with all pending selections
+  const redrawCanvas = () => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw all pending selections
+    pendingSelections.forEach((selection, index) => {
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
+      
+      ctx.fillRect(selection.bounds.x, selection.bounds.y, selection.bounds.width, selection.bounds.height);
+      ctx.strokeRect(selection.bounds.x, selection.bounds.y, selection.bounds.width, selection.bounds.height);
+      
+      // Draw selection number
+      ctx.fillStyle = '#22c55e';
+      ctx.font = '16px Arial';
+      ctx.fillText(`${index + 1}`, selection.bounds.x + 5, selection.bounds.y + 20);
+    });
+  };
 
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.5));
@@ -235,38 +446,137 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
           </div>
 
           <Button
-            variant={isSelecting ? "accent" : "success"}
+            variant={isSelecting ? "destructive" : "default"}
             size="sm"
-            onClick={startSelection}
-            disabled={isSelecting}
+            onClick={isSelecting ? stopSelection : startSelection}
+            disabled={!canvasReady && !isSelecting}
+            className={isSelecting ? "animate-pulse" : ""}
           >
-            <Square className="w-4 h-4 mr-2" />
-            {isSelecting ? 'Soru Seçiliyor...' : 'Soru Seç'}
+            {isSelecting ? (
+              <>
+                <X className="w-4 h-4 mr-2" />
+                İptal Et
+              </>
+            ) : (
+              <>
+                <Square className="w-4 h-4 mr-2" />
+                {canvasReady ? 'Soru Seç' : 'PDF Yükleniyor...'}
+              </>
+            )}
           </Button>
         </div>
       </Card>
 
       {/* PDF Display */}
-      <Card className="p-4 overflow-auto max-h-[600px] bg-muted/30">
-        <div className="flex justify-center" ref={pageRef}>
-          <Document
-            file={fileUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={onDocumentLoadError}
-            loading={
-              <div className="text-center py-8">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-muted-foreground">PDF yükleniyor...</p>
-              </div>
-            }
-          >
-            <Page
-              pageNumber={currentPage}
-              scale={scale}
-              onLoadSuccess={onPageLoadSuccess}
-              className="border border-border shadow-soft rounded"
-            />
-          </Document>
+      <Card className="p-4 bg-muted/30">
+        <div className="w-full overflow-auto max-h-[70vh]">
+          <div className="flex justify-center">
+            <div ref={containerRef} className="relative inline-block">
+              <Document
+                file={fileUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={onDocumentLoadError}
+                loading={
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-muted-foreground">PDF yükleniyor...</p>
+                  </div>
+                }
+              >
+                <Page
+                  pageNumber={currentPage}
+                  scale={scale}
+                  onLoadSuccess={onPageLoadSuccess}
+                  className="border border-border shadow-soft rounded"
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                />
+              </Document>
+              
+              {/* Selection Canvas Overlay - Always present but only interactive when selecting */}
+              <canvas
+                ref={canvasRef}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  cursor: isSelecting ? 'crosshair' : 'default',
+                  pointerEvents: isSelecting ? 'auto' : 'none',
+                  zIndex: 10,
+                  border: isSelecting ? '2px solid red' : 'none', // Debug border only when selecting
+                  backgroundColor: isSelecting ? 'rgba(255, 0, 0, 0.05)' : 'transparent'
+                }}
+              />
+              
+              {/* Floating Action Buttons - Always visible when there are pending selections */}
+              {pendingSelections.length > 0 && (
+                <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+                  <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 border">
+                    <div className="text-sm font-medium text-center mb-2">
+                      {pendingSelections.length} soru seçildi
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={confirmAllSelections}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Tümünü Onayla
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={cancelAllSelections}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Tümünü İptal
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Individual selection thumbnails */}
+                  <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2 border max-h-40 overflow-y-auto">
+                    <div className="text-xs font-medium mb-2">Seçilen Sorular:</div>
+                    <div className="space-y-2">
+                      {pendingSelections.map((selection, index) => (
+                        <div key={selection.id} className="flex items-center gap-2 p-1 bg-gray-50 rounded">
+                          <img 
+                            src={selection.imageData} 
+                            alt={`Soru ${index + 1}`}
+                            className="w-8 h-8 object-cover rounded border"
+                          />
+                          <span className="text-xs flex-1">Soru {index + 1}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => confirmSingleSelection(selection.id)}
+                            className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => cancelSingleSelection(selection.id)}
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </Card>
     </div>

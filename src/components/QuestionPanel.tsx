@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trash2, GripVertical, FileDown } from 'lucide-react';
+import { Trash2, GripVertical, FileDown, Eye } from 'lucide-react';
 import { Question, TestTemplate } from '@/types/test';
 import {
   DndContext,
@@ -28,6 +28,7 @@ interface QuestionPanelProps {
   questions: Question[];
   onQuestionsChange: (questions: Question[]) => void;
   onExportPDF: (template: TestTemplate) => void;
+  onPreviewPDF?: (template: TestTemplate) => void;
 }
 
 interface SortableQuestionProps {
@@ -94,7 +95,7 @@ const SortableQuestion = ({ question, onDelete }: SortableQuestionProps) => {
   );
 };
 
-export const QuestionPanel = ({ questions, onQuestionsChange, onExportPDF }: QuestionPanelProps) => {
+export const QuestionPanel = ({ questions, onQuestionsChange, onExportPDF, onPreviewPDF }: QuestionPanelProps) => {
   const [template, setTemplate] = useState<TestTemplate>({
     title: 'Matematik Yazılı Sınavı',
     schoolName: '',
@@ -142,18 +143,30 @@ export const QuestionPanel = ({ questions, onQuestionsChange, onExportPDF }: Que
     setTemplate(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleExport = () => {
+  const validateTemplate = () => {
     if (questions.length === 0) {
       toast.error('PDF oluşturmak için en az bir soru seçmelisiniz');
-      return;
+      return false;
     }
     
     if (!template.title || !template.teacherName) {
       toast.error('Lütfen test başlığı ve öğretmen adı alanlarını doldurun');
-      return;
+      return false;
     }
+    
+    return true;
+  };
 
+  const handleExport = () => {
+    if (!validateTemplate()) return;
     onExportPDF(template);
+  };
+
+  const handlePreview = () => {
+    if (!validateTemplate()) return;
+    if (onPreviewPDF) {
+      onPreviewPDF(template);
+    }
   };
 
   return (
@@ -167,7 +180,7 @@ export const QuestionPanel = ({ questions, onQuestionsChange, onExportPDF }: Que
       </Card>
 
       {/* Questions List */}
-      <div className="flex-1 space-y-3 overflow-y-auto max-h-96">
+      <div className="flex-1 space-y-3 overflow-y-auto max-h-[400px]">
         {questions.length === 0 ? (
           <Card className="p-6 text-center border-dashed border-2">
             <p className="text-muted-foreground">
@@ -250,17 +263,40 @@ export const QuestionPanel = ({ questions, onQuestionsChange, onExportPDF }: Que
               />
             </div>
           </div>
+          
+          <div>
+            <Label htmlFor="date" className="text-sm font-medium">Sınav Tarihi</Label>
+            <Input
+              id="date"
+              type="date"
+              value={template.date}
+              onChange={(e) => handleTemplateChange('date', e.target.value)}
+            />
+          </div>
         </div>
 
-        <Button
-          onClick={handleExport}
-          className="w-full bg-gradient-secondary"
-          size="lg"
-          disabled={questions.length === 0}
-        >
-          <FileDown className="w-4 h-4 mr-2" />
-          PDF Test Kitapçığı Oluştur
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handlePreview}
+            variant="outline"
+            className="flex-1"
+            size="lg"
+            disabled={questions.length === 0}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Önizle
+          </Button>
+          
+          <Button
+            onClick={handleExport}
+            className="flex-1 bg-gradient-secondary"
+            size="lg"
+            disabled={questions.length === 0}
+          >
+            <FileDown className="w-4 h-4 mr-2" />
+            İndir
+          </Button>
+        </div>
       </Card>
     </div>
   );

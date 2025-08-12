@@ -1,73 +1,148 @@
-# Welcome to your Lovable project
+# Test Maker - PDF'den Soru Seçimi ve Test Oluşturma Aracı
 
-## Project info
+Öğretmenlerin PDF dosyalarından soruları seçerek profesyonel test kitapçıkları oluşturabileceği modern web uygulaması.
 
-**URL**: https://lovable.dev/projects/bbd491d7-6d06-4bce-b66a-62442b82dd62
+## 🚀 Özellikler
 
-## How can I edit this code?
+### ✅ Tamamlanan Özellikler
+- **PDF Yükleme ve Görüntüleme**: PDF dosyalarını yükleyip sayfa sayfa görüntüleme
+- **Soru Seçimi**: PDF üzerinde fare ile kare çizerek soruları seçme
+- **Drag & Drop**: Seçilen soruları sürükle-bırak ile yeniden sıralama
+- **Profesyonel PDF Export**: Seçilen sorulardan test kitapçığı oluşturma
+- **Responsive Tasarım**: Tüm cihazlarda uyumlu arayüz
+- **Test Şablonları**: Özelleştirilebilir test başlığı, okul, öğretmen bilgileri
 
-There are several ways of editing your application.
+### 🔧 Teknik Özellikler
+- **React 18 + TypeScript**: Modern ve tip güvenli geliştirme
+- **Vite**: Hızlı development ve build
+- **Shadcn/UI**: Modern ve erişilebilir UI bileşenleri
+- **React PDF**: PDF görüntüleme ve işleme
+- **Fabric.js**: Canvas üzerinde interaktif soru seçimi
+- **jsPDF**: Profesyonel PDF oluşturma
+- **DND Kit**: Drag & drop sıralama
+- **Tailwind CSS**: Responsive ve modern tasarım
 
-**Use Lovable**
+## 🛠 Kurulum
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bbd491d7-6d06-4bce-b66a-62442b82dd62) and start prompting.
+```bash
+# Projeyi klonla
+git clone [repo-url]
+cd question-extractor
 
-Changes made via Lovable will be committed automatically to this repo.
+# Bağımlılıkları yükle
+npm install
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Development server'ı başlat
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 📖 Kullanım
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 1. PDF Yükleme
+- Ana sayfada "Dosya Seç" butonuna tıklayın
+- Veya PDF dosyasını sürükleyip bırakın
+- Desteklenen format: PDF (Maksimum 50MB)
 
-**Use GitHub Codespaces**
+### 2. Soru Seçimi
+- PDF yüklendikten sonra "Soru Seç" butonuna tıklayın
+- PDF üzerinde fare ile kare çizerek soruları seçin
+- Seçilen sorular sağ panelde görüntülenir
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 3. Soru Düzenleme
+- Sağ panelde soruları sürükle-bırak ile yeniden sıralayın
+- İstenmeyen soruları çöp kutusu simgesi ile silin
 
-## What technologies are used for this project?
+### 4. Test Oluşturma
+- Test ayarları bölümünde:
+  - Test başlığını girin
+  - Okul/kurum adını yazın
+  - Sınıf/şube bilgisini ekleyin
+  - Öğretmen adını girin
+  - Süreyi belirleyin
+- "PDF Test Kitapçığı Oluştur" butonuna tıklayın
+
+## 🎯 MVP Kapsamı
+
+### Dahil Edilenler ✅
+- [x] PDF yükleme ve görüntüleme
+- [x] Basit kare çizme ile soru seçimi  
+- [x] Seçilen soruları listeleme
+- [x] Drag & drop ile sıralama
+- [x] Temel test şablonu
+- [x] PDF export
+- [x] Responsive tasarım
+
+### Gelecek Versiyonlar 🔄
+- [ ] Çoklu PDF desteği
+- [ ] Gelişmiş soru editörü
+- [ ] Soru kategorileri
+- [ ] Template kaydetme
+- [ ] Kullanıcı hesapları
+
+## 🏗 Proje Yapısı
+
+```
+src/
+├── components/          # React bileşenleri
+│   ├── PDFUploader.tsx  # PDF yükleme
+│   ├── PDFViewer.tsx    # PDF görüntüleme ve soru seçimi
+│   ├── QuestionPanel.tsx # Soru listesi ve test ayarları
+│   └── ui/              # Shadcn UI bileşenleri
+├── hooks/               # Custom hook'lar
+│   └── usePDFExport.ts  # PDF export işlemleri
+├── types/               # TypeScript tip tanımları
+│   └── test.ts          # Test ve soru tipleri
+└── pages/               # Sayfa bileşenleri
+    └── TestMaker.tsx    # Ana uygulama sayfası
+```
+
+## 🎨 Tasarım Sistemi
+
+### Renk Paleti
+- **Primary**: #4F46E5 (Indigo)
+- **Secondary**: #059669 (Emerald) 
+- **Accent**: #DC2626 (Red)
+- **Background**: #F9FAFB (Gray-50)
+- **Text**: #111827 (Gray-900)
+
+## 📱 Responsive Breakpoints
+- **Mobile**: < 768px
+- **Tablet**: 768px - 1279px  
+- **Desktop**: ≥ 1280px
+
+## 🚀 Build ve Deploy
+
+```bash
+# Production build
+npm run build
+
+# Build'i önizle
+npm run preview
+```
+
+## 🤝 Katkıda Bulunma
+
+1. Fork yapın
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Commit yapın (`git commit -m 'Add amazing feature'`)
+4. Push yapın (`git push origin feature/amazing-feature`)
+5. Pull Request oluşturun
+
+## 📝 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır.
+
+---
+
+**Test Maker** - Eğitimde teknoloji kullanımını kolaylaştıran modern araç 🎓
+
+## Original Lovable Project Info
+
+**URL**: https://lovable.dev/projects/bbd491d7-6d06-4bce-b66a-62442b82dd62
 
 This project is built with:
-
 - Vite
-- TypeScript
+- TypeScript  
 - React
 - shadcn-ui
 - Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/bbd491d7-6d06-4bce-b66a-62442b82dd62) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
