@@ -115,6 +115,8 @@ const TestMaker = () => {
               <PDFViewer
                 file={selectedPdf.file}
                 onQuestionSelect={handleQuestionSelect}
+                pdfId={selectedPdf.id}
+                pdfName={selectedPdf.name}
               />
             ) : (
               <Card className="h-full flex items-center justify-center">
@@ -142,6 +144,17 @@ const TestMaker = () => {
           </div>
         </div>
       </main>
+      
+      {/* Footer */}
+      <footer className="bg-gradient-to-r from-purple-50 to-pink-50 border-t border-purple-200/50 py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-xs text-purple-600 font-medium">
+              Built with ❤️ by <span className="text-purple-700 font-semibold">Gökmen</span>
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

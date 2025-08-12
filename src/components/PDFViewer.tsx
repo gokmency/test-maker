@@ -16,9 +16,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 interface PDFViewerProps {
   file: File;
   onQuestionSelect: (question: Omit<Question, 'id' | 'order'>) => void;
+  pdfId?: string;
+  pdfName?: string;
 }
 
-export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
+export const PDFViewer = ({ file, onQuestionSelect, pdfId, pdfName }: PDFViewerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [numPages, setNumPages] = useState(0);
@@ -327,7 +329,9 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
       onQuestionSelect({
         imageData: selection.imageData,
         pageNumber: currentPage,
-        selection: selection.bounds
+        selection: selection.bounds,
+        pdfId: pdfId || 'unknown',
+        pdfName: pdfName || 'Unknown PDF'
       });
     });
     
@@ -343,7 +347,9 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
     onQuestionSelect({
       imageData: selection.imageData,
       pageNumber: currentPage,
-      selection: selection.bounds
+      selection: selection.bounds,
+      pdfId: pdfId || 'unknown',
+      pdfName: pdfName || 'Unknown PDF'
     });
     
     setPendingSelections(prev => prev.filter(s => s.id !== selectionId));
@@ -513,62 +519,80 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
                 }}
               />
               
-              {/* Floating Action Buttons - Always visible when there are pending selections */}
+              {/* Pending Selections Panel - Fixed position at bottom right */}
               {pendingSelections.length > 0 && (
-                <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
-                  <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 border">
-                    <div className="text-sm font-medium text-center mb-2">
-                      {pendingSelections.length} soru seçildi
-                    </div>
-                    <div className="flex gap-2">
+                <div className="fixed bottom-6 right-6 z-50 max-w-sm">
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 backdrop-blur-sm rounded-2xl shadow-2xl p-4 border border-purple-200/50">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-semibold text-purple-800">
+                          {pendingSelections.length} soru seçildi
+                        </span>
+                      </div>
                       <Button
                         size="sm"
-                        variant="default"
-                        onClick={confirmAllSelections}
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        variant="ghost"
+                        onClick={cancelAllSelections}
+                        className="h-6 w-6 p-0 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-full"
                       >
-                        <Check className="h-4 w-4 mr-1" />
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 mb-3">
+                      <Button
+                        size="sm"
+                        onClick={confirmAllSelections}
+                        className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                      >
+                        <Check className="h-4 w-4 mr-2" />
                         Tümünü Onayla
                       </Button>
                       <Button
                         size="sm"
-                        variant="destructive"
+                        variant="outline"
                         onClick={cancelAllSelections}
+                        className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
                       >
-                        <X className="h-4 w-4 mr-1" />
+                        <X className="h-4 w-4 mr-2" />
                         Tümünü İptal
                       </Button>
                     </div>
-                  </div>
-                  
-                  {/* Individual selection thumbnails */}
-                  <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2 border max-h-40 overflow-y-auto">
-                    <div className="text-xs font-medium mb-2">Seçilen Sorular:</div>
-                    <div className="space-y-2">
+                    
+                    {/* Individual Selections */}
+                    <div className="max-h-32 overflow-y-auto space-y-2">
+                      <div className="text-xs font-medium text-purple-700 mb-2">Seçilen Sorular:</div>
                       {pendingSelections.map((selection, index) => (
-                        <div key={selection.id} className="flex items-center gap-2 p-1 bg-gray-50 rounded">
+                        <div key={selection.id} className="flex items-center gap-3 p-2 bg-white/70 rounded-xl border border-purple-100/50 hover:bg-white/90 transition-all duration-200">
                           <img 
                             src={selection.imageData} 
                             alt={`Soru ${index + 1}`}
-                            className="w-8 h-8 object-cover rounded border"
+                            className="w-10 h-10 object-cover rounded-lg border-2 border-purple-200 shadow-sm"
                           />
-                          <span className="text-xs flex-1">Soru {index + 1}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => confirmSingleSelection(selection.id)}
-                            className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
-                          >
-                            <Check className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => cancelSingleSelection(selection.id)}
-                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                          <span className="text-sm font-medium text-purple-800 flex-1">
+                            Soru {index + 1}
+                          </span>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => confirmSingleSelection(selection.id)}
+                              className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-all duration-200"
+                            >
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => cancelSingleSelection(selection.id)}
+                              className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all duration-200"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>

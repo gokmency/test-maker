@@ -97,12 +97,12 @@ const SortableQuestion = ({ question, onDelete }: SortableQuestionProps) => {
 
 export const QuestionPanel = ({ questions, onQuestionsChange, onExportPDF, onPreviewPDF }: QuestionPanelProps) => {
   const [template, setTemplate] = useState<TestTemplate>({
-    title: 'Matematik Yazılı Sınavı',
-    schoolName: '',
+    title: 'Fizik Sinavi',
+    schoolName: 'Envar Lisesi',
     className: '',
     date: new Date().toISOString().split('T')[0],
     duration: '60',
-    teacherName: '',
+    teacherName: 'Fatma Celik ',
     type: 'written',
     numberingStyle: 'numeric',
   });
