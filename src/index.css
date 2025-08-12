@@ -2,41 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Educational Test Maker Design System - Professional & Modern */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Educational Blue Theme */
+    --background: 220 20% 98%;
+    --foreground: 215 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary Education Blue */
+    --primary: 238 75% 60%;
+    --primary-light: 238 75% 70%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Success Green for Actions */
+    --secondary: 160 60% 45%;
+    --secondary-light: 160 60% 55%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Neutral Background */
+    --muted: 220 15% 96%;
+    --muted-foreground: 215 15% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent Orange for Selection */
+    --accent: 30 95% 55%;
+    --accent-light: 30 95% 65%;
+    --accent-foreground: 215 25% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive Red */
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Professional Borders */
+    --border: 220 15% 88%;
+    --input: 220 15% 92%;
+    --ring: 238 75% 60%;
 
-    --radius: 0.5rem;
+    /* Educational Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(238 75% 60%), hsl(238 75% 70%));
+    --gradient-secondary: linear-gradient(135deg, hsl(160 60% 45%), hsl(160 60% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(30 95% 55%), hsl(30 95% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(238 75% 60%), hsl(220 75% 65%));
+
+    /* Professional Shadows */
+    --shadow-soft: 0 2px 10px -2px hsl(238 75% 60% / 0.1);
+    --shadow-medium: 0 4px 20px -4px hsl(238 75% 60% / 0.15);
+    --shadow-elevated: 0 8px 30px -8px hsl(238 75% 60% / 0.2);
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
