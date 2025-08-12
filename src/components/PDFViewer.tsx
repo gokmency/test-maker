@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Square } from 'lucide-react';
 import { Canvas as FabricCanvas, Rect } from 'fabric';
-import * as pdfjsLib from 'pdfjs-dist';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { Question } from '@/types/test';
 import { toast } from 'sonner';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 
-// PDF.js worker setup - use local worker to avoid CORS issues
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Set worker path for react-pdf
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface PDFViewerProps {
   file: File;
@@ -16,84 +18,62 @@ interface PDFViewerProps {
 }
 
 export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
   const [scale, setScale] = useState(1.2);
   const [isSelecting, setIsSelecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
 
-  // Load PDF
+  // Create file URL for PDF
   useEffect(() => {
-    const loadPDF = async () => {
-      setIsLoading(true);
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-        setPdfDoc(pdf);
-        setTotalPages(pdf.numPages);
-        toast.success(`PDF yüklendi: ${pdf.numPages} sayfa`);
-      } catch (error) {
-        console.error('PDF yükleme hatası:', error);
-        toast.error('PDF yüklenirken hata oluştu');
-      } finally {
-        setIsLoading(false);
-      }
+    const url = URL.createObjectURL(file);
+    setFileUrl(url);
+    return () => {
+      if (url) URL.revokeObjectURL(url);
     };
-
-    loadPDF();
   }, [file]);
 
-  // Render current page
-  const renderPage = useCallback(async () => {
-    if (!pdfDoc || !canvasRef.current) return;
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setIsLoading(false);
+    toast.success(`PDF yüklendi: ${numPages} sayfa`);
+  };
 
-    setIsLoading(true);
-    try {
-      const page = await pdfDoc.getPage(currentPage);
-      const viewport = page.getViewport({ scale });
-      
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
+  const onDocumentLoadError = (error: any) => {
+    console.error('PDF yükleme hatası:', error);
+    toast.error('PDF yüklenirken hata oluştu');
+    setIsLoading(false);
+  };
 
-      // Setup Fabric.js canvas for selection
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose();
-      }
+  const onPageLoadSuccess = (page: any) => {
+    // Setup Fabric.js canvas for selection after page loads
+    if (!pageRef.current) return;
 
-      const fabricCanvas = new FabricCanvas(canvas, {
-        selection: false,
-        preserveObjectStacking: true,
-      });
+    // Find the canvas element created by react-pdf
+    const canvas = pageRef.current.querySelector('canvas');
+    if (!canvas) return;
 
-      fabricCanvas.setDimensions({
-        width: viewport.width,
-        height: viewport.height
-      });
-
-      fabricCanvasRef.current = fabricCanvas;
-
-    } catch (error) {
-      console.error('Sayfa render hatası:', error);
-      toast.error('Sayfa yüklenirken hata oluştu');
-    } finally {
-      setIsLoading(false);
+    // Dispose previous fabric canvas
+    if (fabricCanvasRef.current) {
+      fabricCanvasRef.current.dispose();
     }
-  }, [pdfDoc, currentPage, scale]);
 
-  useEffect(() => {
-    renderPage();
-  }, [renderPage]);
+    // Create new fabric canvas overlay
+    const fabricCanvas = new FabricCanvas(canvas, {
+      selection: false,
+      preserveObjectStacking: true,
+    });
+
+    fabricCanvas.setDimensions({
+      width: canvas.width,
+      height: canvas.height
+    });
+
+    fabricCanvasRef.current = fabricCanvas;
+  };
 
   // Selection logic
   const startSelection = useCallback(() => {
@@ -156,10 +136,10 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
       };
 
       if (selection.width > 20 && selection.height > 20) {
-        // Capture the selected area as image
+        // Capture the selected area as image from react-pdf canvas
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
-        const sourceCanvas = canvasRef.current;
+        const sourceCanvas = pageRef.current?.querySelector('canvas');
         
         if (tempCtx && sourceCanvas) {
           tempCanvas.width = selection.width;
@@ -202,14 +182,14 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.5));
   const handlePrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
-  const handleNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const handleNextPage = () => setCurrentPage(prev => Math.min(prev + 1, numPages));
 
-  if (isLoading && !pdfDoc) {
+  if (!fileUrl) {
     return (
       <Card className="flex items-center justify-center h-96">
         <div className="text-center space-y-2">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-muted-foreground">PDF yükleniyor...</p>
+          <p className="text-muted-foreground">PDF hazırlanıyor...</p>
         </div>
       </Card>
     );
@@ -230,13 +210,13 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-sm font-medium min-w-20 text-center">
-              {currentPage} / {totalPages}
+              {currentPage} / {numPages}
             </span>
             <Button
               variant="outline"
               size="sm"
               onClick={handleNextPage}
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= numPages}
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -266,14 +246,27 @@ export const PDFViewer = ({ file, onQuestionSelect }: PDFViewerProps) => {
         </div>
       </Card>
 
-      {/* PDF Canvas */}
+      {/* PDF Display */}
       <Card className="p-4 overflow-auto max-h-[600px] bg-muted/30">
-        <div className="flex justify-center">
-          <canvas
-            ref={canvasRef}
-            className="border border-border shadow-soft rounded cursor-crosshair"
-            style={{ maxWidth: '100%', height: 'auto' }}
-          />
+        <div className="flex justify-center" ref={pageRef}>
+          <Document
+            file={fileUrl}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
+            loading={
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-muted-foreground">PDF yükleniyor...</p>
+              </div>
+            }
+          >
+            <Page
+              pageNumber={currentPage}
+              scale={scale}
+              onLoadSuccess={onPageLoadSuccess}
+              className="border border-border shadow-soft rounded"
+            />
+          </Document>
         </div>
       </Card>
     </div>
